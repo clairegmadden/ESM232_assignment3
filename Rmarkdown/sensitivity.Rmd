@@ -1,0 +1,96 @@
+---
+title: "sensitivity"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(sensitivity)
+library(tidyverse)
+library(pse)
+
+```
+
+## Example of using LHS for sensitivity analysis
+
+Make sure you install the **pse** library
+
+
+Lets look at our almond yield example
+
+```{r almondsens}
+
+source("../R/almond.R")
+
+
+# Lets consider two parameters....
+factors = c("Tmincoeff1", "Tmincoeff2")
+
+# Decide How many parameter sets to run
+nsets=500
+
+# choose distributions for parameters - 
+q = c("qnorm", "qnorm")
+q.arg = list(list(mean=-0.015,sd=0.001), list(mean=-0.0046, sd=0.001))
+
+# generate samples from LHS
+sens_almond = LHS(NULL,factors,nsets,q,q.arg)
+sens_pars = get.data(sens_almond)
+head(sens_pars)
+
+# now run the model for each pai of samples
+# first create a data structure to store results
+sens_results = matrix(nrow=nsets, ncol=2)
+
+# read in the input data
+SB=read.table("../data/clim.txt")
+clim= SB
+
+
+# note our use of unlist here to extract the results we need
+# try this with > 500 parameter sets - will take time
+for (i in 1:nsets) {
+  sens_results[i,] = unlist(almond(clim=clim,Tmincoeff1=sens_pars[i,1], Tmincoeff2=sens_pars[i,2]))
+}
+
+# this will be much faster
+# notice that MoreArgs is used for inputs that are the same for each set
+tmp= mapply(FUN=almond, Tmincoeff1=sens_pars$Tmincoeff1, Tmincoeff2=sens_pars$Tmincoeff2, MoreArgs=list(clim=clim))
+head(tmp)
+
+# use unlist to get a matrix
+sens_results = matrix((unlist(tmp)), ncol=2, byrow=TRUE)
+
+colnames(sens_results)=c("maxyield","minyield")
+
+# to take advantage of LHS/pse functions for plotting interesting information we can send results back
+sens_almond = pse::tell(sens_almond, t(sens_results), res.names=c("maxyield","minyield"))
+pse::plotscatter(sens_almond, col="blue", cex=5)
+
+pse::plotprcc(sens_almond)
+sens_almond$prcc
+
+# we can also plot results in interesting ways
+# turn sens_results into a data frame - easier access to R plotting functions
+
+sens_results = as.data.frame(sens_results)
+ggplot(sens_results, aes(minyield, maxyield))+geom_point()+labs(y="Max Yield (as anomoly)", "Min Yield (as anomoly")
+
+
+# add uncertainty bounds on our estimates
+tmp = sens_results %>% gather(value="value", key="yield")
+ggplot(tmp, aes(yield, value, col=yield))+geom_boxplot()+labs(y="Yield (as anomoly)")
+
+# notice the difference
+ggplot(tmp, aes(yield, value, col=yield))+geom_boxplot()+labs(y="Yield (as anomoly)")+facet_wrap(~yield, scales="free")
+
+
+
+
+```
+
+For Wednesday try a sensitivity analysis with the compute_NPV function, bring to class
+
+
+

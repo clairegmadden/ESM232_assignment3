@@ -1,0 +1,60 @@
+---
+title: "assignment3"
+author: "Claire Madden"
+date: "4/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(sensitivity)
+library(pse)
+library(here)
+
+
+clim_data <- read_csv(here("Data", "clim.csv"))
+```
+
+
+Adjust your almond model to  output ONLY the mean almond yield anomoly IF the users sets parameter (e.g mean_only = TRUE))
+
+
+Perform a sensitivity analysis of how mean anomaly varies ALL of the parameters used in the yield model  
+
+Assume parameters are normally distribute with standard deviation of 20% mean value
+
+```{r}
+
+
+
+```
+
+
+Rank the parameters in term of their sensitivity
+
+Graph uncertainty in mean yield anomaly across all parameter uncertainty (boxplot and cummulative distribution of the output).
+
+
+
+Repeat using the LHS and Sobel methods
+
+
+
+Repeat using twice as many parameter sets as you did in your first sensitivity analysis - and look at how this changes the sensitivity results
+
+
+
+Submit R markdown and short write up describing what you learned from the sensitivity analysis. Please submit your markdown as an .html or PDF. 
+
+```{r}
+
+source("../R/yield_anom.R")
+
+
+```
+
+
+
+
