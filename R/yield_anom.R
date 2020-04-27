@@ -16,8 +16,9 @@ yield_anom = function(tn1 = -0.015, tn2 = -0.0046, p1 = -0.07, p2 = 0.0043, int 
   
   clim_monthly <- clim_data %>% 
   group_by(month, year) %>% 
-  summarize(meantmin = mean(tmin_c),
-            precip=sum(precip)) %>%  #maybe check if this is supposed to be mean rather than sum (slack notes)  
+  dplyr::summarize(meantmin = mean(tmin_c),
+            precip = sum(precip)
+            ) %>%  #maybe check if this is supposed to be mean rather than sum (slack notes)  
     ungroup()
   
   clim_monthly$precip = ifelse(clim_monthly$precip < 0, return("Precipitation cannot be less than zero"), clim_monthly$precip)

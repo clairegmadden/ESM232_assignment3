@@ -15,6 +15,8 @@ library(here)
 
 
 clim_data <- read_csv(here("Data", "clim.csv"))
+
+source("../R/yield_anom.R")
 ```
 
 
@@ -42,7 +44,9 @@ q.arg = list(list(mean = -0.015, sd = 0.2),
              list(mean = -0.07, sd= 0.2),
              list(mean = 0.0043, sd = 0.2),
              list(mean = 0.28, sd = 0.2))
+```
 
+```{r LHS}
 
 
 # generate samples from LHS
@@ -52,38 +56,83 @@ sens_pars <- get.data(sens1)
 
 
 # create matrix to store results
-sens1_results <- matrix(nrow = nsets, ncol = 5)
+sens1_results <- matrix(nrow = nsets, ncol = 1)
 
 # read in input data in set up code chunk as 'clim_data'
+
+
+# notice that MoreArgs is used for inputs that are the same for each set
+df_almond = mapply(FUN=yield_anom, 
+                   tn1=sens_pars$tn1, 
+                   tn2=sens_pars$tn2,
+                   p1=sens_pars$p1,
+                   p2=sens_pars$p2,
+                   int=sens_pars$int,
+                   MoreArgs=list(clim_data=clim_data))
+
+
+# use unlist to get a matrix
+sens1_results <- matrix((unlist(df_almond)), ncol=1, byrow=TRUE)
+
+colnames(sens1_results)=c("mean_anom_LHS")
+
+
+# to take advantage of LHS/pse functions for plotting interesting information we can send results back
+sens1 = pse::tell(sens1, t(sens1_results), res.names=c("mean_anom_LHS"))
+pse::plotscatter(sens1, col="blue", cex=5) #p2!
+
+pse::plotprcc(sens1) #p2! most sensitive, p1 is next, then tn2, tn1 and then int
+sens1$prcc
+
+
+# we can also plot results in interesting ways
+# turn sens1_results into a data frame - easier access to R plotting functions
+
+sens1_LHS = as.data.frame(sens1_results) #bind with sobel later
+
+# ggplot(sens1_results, 
+#        aes(mean_anom_LHS)) +
+#   geom_point() +
+#   labs(y="Mean Yield (as anomoly)")
+
+
+```
+
+
+```{r Sobel}
+
+
+
+```
+
+Rank the parameters in term of their sensitivity
+```{r Rank}
 
 
 
 ```
 
 
-Rank the parameters in term of their sensitivity
-
 Graph uncertainty in mean yield anomaly across all parameter uncertainty (boxplot and cummulative distribution of the output).
 
+```{r Graph 500}
 
 
-Repeat using the LHS and Sobel methods
+
+```
 
 
 
 Repeat using twice as many parameter sets as you did in your first sensitivity analysis - and look at how this changes the sensitivity results
 
+```{r Graph 1000}
 
-
-Submit R markdown and short write up describing what you learned from the sensitivity analysis. Please submit your markdown as an .html or PDF. 
-
-```{r}
-
-source("../R/yield_anom.R")
 
 
 ```
 
+
+Submit R markdown and short write up describing what you learned from the sensitivity analysis. Please submit your markdown as an .html or PDF. 
 
 
 
