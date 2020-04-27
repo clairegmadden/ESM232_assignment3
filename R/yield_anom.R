@@ -12,12 +12,12 @@
 # function in paper : Y = -0.015tn,2 - 0.0046t(^2)n,2 - 0.07P1 + 0.0043P(^2)1 +0.28
 
 
-yield_anom = function(tn1 = -0.015, tn2 = -0.0046, p1 = -0.07, p2 = 0.0043, int = 0.28, clim_data) {
+yield_anom = function(tn1 = -0.015, tn2 = -0.0046, p1 = -0.07, p2 = 0.0043, int = 0.28, clim_data, mean_only=TRUE) {
   
   clim_monthly <- clim_data %>% 
   group_by(month, year) %>% 
   summarize(meantmin = mean(tmin_c),
-            precip=mean(precip)) %>%  #maybe check if this is supposed to be mean rather than sum (slack notes)  
+            precip=sum(precip)) %>%  #maybe check if this is supposed to be mean rather than sum (slack notes)  
     ungroup()
   
   clim_monthly$precip = ifelse(clim_monthly$precip < 0, return("Precipitation cannot be less than zero"), clim_monthly$precip)
@@ -45,14 +45,20 @@ yield_anom = function(tn1 = -0.015, tn2 = -0.0046, p1 = -0.07, p2 = 0.0043, int 
   }
   
 
+  mean_anom <- mean(df_anom$y_anom)
+  
   
   y_anom_yr <- dplyr::select(df_anom, c(year,y_anom))
   
   min_anom <- min(y_anom_yr$y_anom)
   max_anom <- max(y_anom_yr$y_anom)
   
-  return(list(y_anom_yr, min_anom, max_anom))
-  
+  if(mean_only){
+    return(mean_anom)
+    }
+  else{
+    return(list(y_anom_yr, min_anom, max_anom))
+  }
 }
 
 

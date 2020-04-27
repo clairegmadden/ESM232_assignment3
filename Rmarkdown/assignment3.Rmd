@@ -25,7 +25,36 @@ Perform a sensitivity analysis of how mean anomaly varies ALL of the parameters 
 
 Assume parameters are normally distribute with standard deviation of 20% mean value
 
-```{r}
+```{r parameters}
+
+# considering all parameters in the yield_anom model
+factors <- c("tn1", "tn2", "p1", "p2", "int")
+
+# number of parameter sets to run
+nsets = 500
+
+# set distributions
+
+q = c("qnorm", "qnorm", "qnorm", "qnorm", "qnorm")
+
+q.arg = list(list(mean = -0.015, sd = 0.2),
+             list(mean = -0.0046, sd = 0.2),
+             list(mean = -0.07, sd= 0.2),
+             list(mean = 0.0043, sd = 0.2),
+             list(mean = 0.28, sd = 0.2))
+
+
+
+# generate samples from LHS
+sens1 <- LHS(NULL, factors, nsets, q, q.arg)
+
+sens_pars <- get.data(sens1)
+
+
+# create matrix to store results
+sens1_results <- matrix(nrow = nsets, ncol = 5)
+
+# read in input data in set up code chunk as 'clim_data'
 
 
 
