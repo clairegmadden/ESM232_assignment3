@@ -39,11 +39,15 @@ nsets = 500
 
 q = c("qnorm", "qnorm", "qnorm", "qnorm", "qnorm")
 
-q.arg = list(list(mean = -0.015, sd = 0.2),
-             list(mean = -0.0046, sd = 0.2),
-             list(mean = -0.07, sd= 0.2),
-             list(mean = 0.0043, sd = 0.2),
-             list(mean = 0.28, sd = 0.2))
+
+
+q.arg = list(list(mean = -0.015, sd = abs(0.2*-0.015)),
+             list(mean = -0.0046, sd = abs(0.2*-0.0046)),
+             list(mean = -0.07, sd= abs(0.2*-0.07)),
+             list(mean = 0.0043, sd = abs(0.2*0.0043)),
+             list(mean = 0.28, sd = abs(0.2*0.28)))
+
+# unsure if calling each variable by name in function will give us the correct value to calculate sd, so used actual number values instead
 ```
 
 ```{r LHS}
@@ -99,40 +103,64 @@ np=500
 
 # generate two examples of random number from parmeter distributions
 
-tn1 = rnorm(mean = -0.015, sd = 0.2, n=np)
-tn2 = rnorm(mean = -0.0046, sd = 0.2, n=np)
-p1 = rnorm(mean = -0.07, sd= 0.2, n=np)
-p2 = rnorm(mean = 0.0043, sd = 0.2, n=np)
-int = rnorm(mean = 0.28, sd = 0.2, n=np)
+tn1_s = rnorm(mean = -0.015, sd = abs(0.2*-0.015), n=np)
+tn2_s = rnorm(mean = -0.0046, sd = abs(0.2*-0.0046), n=np)
+p1_s = rnorm(mean = -0.07, sd= abs(0.2*-0.07), n=np)
+p2_s = rnorm(mean = 0.0043, sd = abs(0.2*0.0043), n=np)
+int_s = rnorm(mean = 0.28, sd = abs(0.2*0.28), n=np)
 
 # Sample 1
 
-X1 = cbind.data.frame(tn1, tn2, p1, p2, int)
+X1 = cbind.data.frame(tn1_s, tn2_s, p1_s, p2_s, int_s)
 
-tn1 = rnorm(mean = -0.015, sd = 0.2, n=np)
-tn2 = rnorm(mean = -0.0046, sd = 0.2, n=np)
-p1 = rnorm(mean = -0.07, sd= 0.2, n=np)
-p2 = rnorm(mean = 0.0043, sd = 0.2, n=np)
-int = rnorm(mean = 0.28, sd = 0.2, n=np)
+tn1_s = rnorm(mean = -0.015, sd = abs(0.2*-0.015), n=np)
+tn2_s = rnorm(mean = -0.0046, sd = abs(0.2*-0.0046), n=np)
+p1_s = rnorm(mean = -0.07, sd= abs(0.2*-0.07), n=np)
+p2_s = rnorm(mean = 0.0043, sd = abs(0.2*0.0043), n=np)
+int_s = rnorm(mean = 0.28, sd = abs(0.2*0.28), n=np)
 
 # Sample 2
 
-X2 = cbind.data.frame(tn1, tn2, p1, p2, int)
+X2 = cbind.data.frame(tn1_s, tn2_s, p1_s, p2_s, int_s)
 
 
 sens1_sobel = sobol2007(model = NULL, X1, X2, nboot = 100)
 
 # run model for all parameter sets
 sens1_results_sobel = mapply(FUN=yield_anom,  
-                             tn1=sens1_sobel$X$tn1,
-                             tn2=sens1_sobel$X$tn2,
-                             p1=sens1_sobel$X$p1, 
-                             p2=sens1_sobel$X$p2, 
-                             int=sens1_sobel$X$int,
+                             tn1=sens1_sobel$X$tn1_s,
+                             tn2=sens1_sobel$X$tn2_s,
+                             p1=sens1_sobel$X$p1_s, 
+                             p2=sens1_sobel$X$p2_s, 
+                             int=sens1_sobel$X$int_s,
                              MoreArgs=list(clim_data=clim_data))
 
 
 sens1_sobel = sensitivity::tell(sens1_sobel,sens1_results_sobel, sens1_results_sobel.names="ga")
+
+
+# first-order indices (main effect without co-variance)
+sens1_sobel$S
+
+# total sensitivity index -note that this partitions the output variance - so values sum to 1
+sens1_sobel$T
+
+# The difference between the main effect and total effect can tell us something about how the parameter influences results
+# so in the main effect we include interactions with other parameters
+
+print(sens1_sobel)
+plot(sens1_sobel)
+
+# compare with LHS and PRCC
+sens1$prcc
+
+
+sens1_sobel$S
+sens1_sobel$T
+
+# make a data frame for plotting
+sens1_sobel_500 = cbind.data.frame(sens1_sobel$X, anom=sens1_sobel$y)
+
 
 
 
@@ -141,7 +169,8 @@ sens1_sobel = sensitivity::tell(sens1_sobel,sens1_results_sobel, sens1_results_s
 Rank the parameters in term of their sensitivity
 ```{r Rank}
 
-
+# in both methods, p2 is the most sensitive parameter
+# in LHS, p1 closely follows p2 in sesitivity, in sobel p2 is much more sensitive than all the other parameters
 
 ```
 
@@ -153,16 +182,20 @@ Graph uncertainty in mean yield anomaly across all parameter uncertainty (boxplo
 # we can also plot results in interesting ways
 # turn sens_results into a data frame - easier access to R plotting functions
 
-sens_results = as.data.frame(sens_results)
-ggplot(sens_results, aes(minyield, maxyield))+geom_point()+labs(y="Max Yield (as anomoly)", "Min Yield (as anomoly")
+lhs_anom <- sens1_LHS %>% 
+  mutate(sens_type = "LHS") %>% 
+  rename(anom = "mean_anom_LHS")
+
+sobel_anom <- sens1_sobel_500 %>% 
+  dplyr::select(anom) %>% 
+  mutate(sens_type = "sobel")
+
+sens1_outputs <- rbind(lhs_anom, sobel_anom)
+
+ggplot(data = sens1_outputs, aes(x = sens_type, y = anom))+
+  geom_boxplot(aes(fill = sens_type))
 
 
-# add uncertainty bounds on our estimates
-tmp = sens_results %>% gather(value="value", key="yield")
-ggplot(tmp, aes(yield, value, col=yield))+geom_boxplot()+labs(y="Yield (as anomoly)")
-
-# notice the difference
-ggplot(tmp, aes(yield, value, col=yield))+geom_boxplot()+labs(y="Yield (as anomoly)")+facet_wrap(~yield, scales="free")
 
 
 ```
@@ -173,9 +206,143 @@ Repeat using twice as many parameter sets as you did in your first sensitivity a
 
 ```{r Graph 1000}
 
+#LHS
+
+nsets = 1000
+
+# generate samples from LHS
+sens1 <- LHS(NULL, factors, nsets, q, q.arg)
+
+sens_pars <- get.data(sens1)
+
+
+# create matrix to store results
+sens1_results <- matrix(nrow = nsets, ncol = 1)
+
+# read in input data in set up code chunk as 'clim_data'
+
+
+# notice that MoreArgs is used for inputs that are the same for each set
+df_almond = mapply(FUN=yield_anom, 
+                   tn1=sens_pars$tn1, 
+                   tn2=sens_pars$tn2,
+                   p1=sens_pars$p1,
+                   p2=sens_pars$p2,
+                   int=sens_pars$int,
+                   MoreArgs=list(clim_data=clim_data))
+
+
+# use unlist to get a matrix
+sens1_results <- matrix((unlist(df_almond)), ncol=1, byrow=TRUE)
+
+colnames(sens1_results)=c("mean_anom_LHS")
+
+
+# to take advantage of LHS/pse functions for plotting interesting information we can send results back
+sens1 = pse::tell(sens1, t(sens1_results), res.names=c("mean_anom_LHS"))
+pse::plotscatter(sens1, col="blue", cex=5) #p2!
+
+pse::plotprcc(sens1) #p2! most sensitive, p1 is next, then tn2, tn1 and then int
+sens1$prcc
+
+
+# we can also plot results in interesting ways
+# turn sens1_results into a data frame - easier access to R plotting functions
+
+sens1_LHS_1000 = as.data.frame(sens1_results) #bind with sobel later
+
+
+
+# SOBEL
+
+np=1000
+
+# generate two examples of random number from parmeter distributions
+
+tn1_s = rnorm(mean = -0.015, sd = abs(0.2*-0.015), n=np)
+tn2_s = rnorm(mean = -0.0046, sd = abs(0.2*-0.0046), n=np)
+p1_s = rnorm(mean = -0.07, sd= abs(0.2*-0.07), n=np)
+p2_s = rnorm(mean = 0.0043, sd = abs(0.2*0.0043), n=np)
+int_s = rnorm(mean = 0.28, sd = abs(0.2*0.28), n=np)
+
+# Sample 1
+
+X1 = cbind.data.frame(tn1_s, tn2_s, p1_s, p2_s, int_s)
+
+tn1_s = rnorm(mean = -0.015, sd = abs(0.2*-0.015), n=np)
+tn2_s = rnorm(mean = -0.0046, sd = abs(0.2*-0.0046), n=np)
+p1_s = rnorm(mean = -0.07, sd= abs(0.2*-0.07), n=np)
+p2_s = rnorm(mean = 0.0043, sd = abs(0.2*0.0043), n=np)
+int_s = rnorm(mean = 0.28, sd = abs(0.2*0.28), n=np)
+
+# Sample 2
+
+X2 = cbind.data.frame(tn1_s, tn2_s, p1_s, p2_s, int_s)
+
+
+sens1_sobel = sobol2007(model = NULL, X1, X2, nboot = 100)
+
+# run model for all parameter sets
+sens1_results_sobel = mapply(FUN=yield_anom,  
+                             tn1=sens1_sobel$X$tn1_s,
+                             tn2=sens1_sobel$X$tn2_s,
+                             p1=sens1_sobel$X$p1_s, 
+                             p2=sens1_sobel$X$p2_s, 
+                             int=sens1_sobel$X$int_s,
+                             MoreArgs=list(clim_data=clim_data))
+
+
+sens1_sobel = sensitivity::tell(sens1_sobel,sens1_results_sobel, sens1_results_sobel.names="ga")
+
+
+# first-order indices (main effect without co-variance)
+sens1_sobel$S
+
+# total sensitivity index -note that this partitions the output variance - so values sum to 1
+sens1_sobel$T
+
+# The difference between the main effect and total effect can tell us something about how the parameter influences results
+# so in the main effect we include interactions with other parameters
+
+print(sens1_sobel)
+plot(sens1_sobel)
+
+# compare with LHS and PRCC
+sens1$prcc
+
+
+sens1_sobel$S
+sens1_sobel$T
+
+# make a data frame for plotting
+sens1_sobel_1000 = cbind.data.frame(sens1_sobel$X, anom=sens1_sobel$y)
+
+
 
 
 ```
+
+```{r graph 1000}
+
+
+lhs_anom <- sens1_LHS_1000 %>% 
+  mutate(sens_type = "LHS") %>% 
+  rename(anom = "mean_anom_LHS")
+
+sobel_anom <- sens1_sobel_1000 %>% 
+  dplyr::select(anom) %>% 
+  mutate(sens_type = "sobel")
+
+sens1_outputs <- rbind(lhs_anom, sobel_anom)
+
+ggplot(data = sens1_outputs, aes(x = sens_type, y = anom))+
+  geom_boxplot(aes(fill = sens_type))
+
+
+```
+
+
+
 
 
 Submit R markdown and short write up describing what you learned from the sensitivity analysis. Please submit your markdown as an .html or PDF. 
