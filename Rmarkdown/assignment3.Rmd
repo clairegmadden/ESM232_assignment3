@@ -90,16 +90,49 @@ sens1$prcc
 
 sens1_LHS = as.data.frame(sens1_results) #bind with sobel later
 
-# ggplot(sens1_results, 
-#        aes(mean_anom_LHS)) +
-#   geom_point() +
-#   labs(y="Mean Yield (as anomoly)")
-
-
 ```
 
 
 ```{r Sobel}
+
+np=500
+
+# generate two examples of random number from parmeter distributions
+
+tn1 = rnorm(mean = -0.015, sd = 0.2, n=np)
+tn2 = rnorm(mean = -0.0046, sd = 0.2, n=np)
+p1 = rnorm(mean = -0.07, sd= 0.2, n=np)
+p2 = rnorm(mean = 0.0043, sd = 0.2, n=np)
+int = rnorm(mean = 0.28, sd = 0.2, n=np)
+
+# Sample 1
+
+X1 = cbind.data.frame(tn1, tn2, p1, p2, int)
+
+tn1 = rnorm(mean = -0.015, sd = 0.2, n=np)
+tn2 = rnorm(mean = -0.0046, sd = 0.2, n=np)
+p1 = rnorm(mean = -0.07, sd= 0.2, n=np)
+p2 = rnorm(mean = 0.0043, sd = 0.2, n=np)
+int = rnorm(mean = 0.28, sd = 0.2, n=np)
+
+# Sample 2
+
+X2 = cbind.data.frame(tn1, tn2, p1, p2, int)
+
+
+sens1_sobel = sobol2007(model = NULL, X1, X2, nboot = 100)
+
+# run model for all parameter sets
+sens1_results_sobel = mapply(FUN=yield_anom,  
+                             tn1=sens1_sobel$X$tn1,
+                             tn2=sens1_sobel$X$tn2,
+                             p1=sens1_sobel$X$p1, 
+                             p2=sens1_sobel$X$p2, 
+                             int=sens1_sobel$X$int,
+                             MoreArgs=list(clim_data=clim_data))
+
+
+sens1_sobel = sensitivity::tell(sens1_sobel,sens1_results_sobel, sens1_results_sobel.names="ga")
 
 
 
@@ -117,6 +150,19 @@ Graph uncertainty in mean yield anomaly across all parameter uncertainty (boxplo
 
 ```{r Graph 500}
 
+# we can also plot results in interesting ways
+# turn sens_results into a data frame - easier access to R plotting functions
+
+sens_results = as.data.frame(sens_results)
+ggplot(sens_results, aes(minyield, maxyield))+geom_point()+labs(y="Max Yield (as anomoly)", "Min Yield (as anomoly")
+
+
+# add uncertainty bounds on our estimates
+tmp = sens_results %>% gather(value="value", key="yield")
+ggplot(tmp, aes(yield, value, col=yield))+geom_boxplot()+labs(y="Yield (as anomoly)")
+
+# notice the difference
+ggplot(tmp, aes(yield, value, col=yield))+geom_boxplot()+labs(y="Yield (as anomoly)")+facet_wrap(~yield, scales="free")
 
 
 ```
