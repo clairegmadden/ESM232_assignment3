@@ -192,7 +192,7 @@ sobel_anom <- sens1_sobel_500 %>%
 
 sens1_outputs <- rbind(lhs_anom, sobel_anom)
 
-ggplot(data = sens1_outputs, aes(x = sens_type, y = anom))+
+plot_500 <- ggplot(data = sens1_outputs, aes(x = sens_type, y = anom))+
   geom_boxplot(aes(fill = sens_type))+
   labs(x = "Sensitivity Analysis Type",
        y = "Variance in Anomaly",
@@ -201,7 +201,7 @@ ggplot(data = sens1_outputs, aes(x = sens_type, y = anom))+
   theme_bw()
 
 
-
+plot_500
 
 ```
 
@@ -342,7 +342,7 @@ sobel_anom <- sens1_sobel_1000 %>%
 
 sens1_outputs <- rbind(lhs_anom, sobel_anom)
 
-ggplot(data = sens1_outputs, aes(x = sens_type, y = anom))+
+plot_1000 <- ggplot(data = sens1_outputs, aes(x = sens_type, y = anom))+
   geom_boxplot(aes(fill = sens_type))+
   labs(x = "Sensitivity Analysis Type",
        y = "Variance in Anomaly",
@@ -350,7 +350,7 @@ ggplot(data = sens1_outputs, aes(x = sens_type, y = anom))+
        fill = "Sensitivity Test")+
   theme_bw()
 
-
+plot_1000
 ```
 
 
